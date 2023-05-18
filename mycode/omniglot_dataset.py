@@ -2,6 +2,10 @@ import torch
 import os
 import errno
 import shutil
+from PIL import Image # pillow package
+import numpy as np
+
+IMG_CACHE={}
 
 class OmniglotDataset(torch.utils.data.Dataset):
     vinyals_baseurl = 'https://raw.githubusercontent.com/jakesnell/prototypical-networks/master/data/omniglot/splits/vinyals/'
@@ -40,10 +44,29 @@ class OmniglotDataset(torch.utils.data.Dataset):
 
         self.idx_classes = index_classes(self.all_items)
 
-        paths, self.y = zip(*[self.get_path_label(pl) for pl in range(len(self))])
+        paths, self.y = zip(*[self.get_path_label(pl) for pl in range(len(self))]) # self.y is the index in self.idx_classes
 
         self.x = map(load_img, paths, range(len(paths)))
         self.x = list(self.x)
+
+    def __getitem__(self, idx):
+        x = self.x[idx]
+        if self.transform:
+            x = self.transform(x)
+        return x, self.y[idx]
+    
+    def __len__(self):
+        return len(self.all_items)
+
+    def get_path_label(self, index):
+        filename = self.all_items[index][0]
+        rot = self.all_items[index][-1]
+        img = str.join(os.sep, [self.all_items[index][2],filename]) + rot
+        target = self.idx_classes[self.all_items[index][1]+self.all_items[index][-1]]
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img,target
 
     def _check_exists(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder))
@@ -124,3 +147,20 @@ def index_classes(items):
             idx[i[1]+i[-1]] = len(idx)
     print("== Dataset: Found %d classes" % len(idx))
     return idx
+
+def load_img(path, idx):
+    path, rot=path.split(os.sep + 'rot')
+    if path in IMG_CACHE:
+        x=IMG_CACHE[path]
+    else:
+        x=Image.open(path)
+        IMG_CACHE[path]=x
+    x=x.rotate(float(rot))
+    x=x.resize((28,28))
+
+    shape=1,x.size[0],x.size[1]
+    x=np.array(x,dtype=np.float32,copy=False)
+    x=1.0-torch.from_numpy(x)
+    x=x.transpose(0,1).contiguous().view(shape)
+
+    return x
