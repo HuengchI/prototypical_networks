@@ -38,7 +38,8 @@ class OmniglotDataset(torch.utils.data.Dataset):
 
         if self._check_exists():
             return
-        
+
+        # Create directories if not exists
         try:
             os.makedirs(os.path.join(self.root, self.splits_folder))
             os.makedirs(os.path.join(self.root, self.raw_folder))
@@ -49,6 +50,7 @@ class OmniglotDataset(torch.utils.data.Dataset):
             else:
                 raise
 
+        # Download split file from https://github.com/jakesnell/prototypical-networks/
         for k,url in self.vinyals_split_sizes.items():
             print('== Downloading '+url)
             data = urllib.request.urlopen(url)
@@ -56,7 +58,8 @@ class OmniglotDataset(torch.utils.data.Dataset):
             file_path = os.path.join(self.root, self.splits_folder, filename)
             with open(file_path, 'wb') as f:
                 f.write(data.read())
-        
+
+        # Download omniglot dataset zip files from https://github.com/brendenlake/omniglot and unzip them
         for url in self.urls:
             print('== Downloading '+url)
             data=urllib.request.urlopen(url)
@@ -71,6 +74,7 @@ class OmniglotDataset(torch.utils.data.Dataset):
             zip_ref.extractall(orig_root)
             zip_ref.close()
 
+        # Organize files
         file_processed = os.path.join(self.root, self.processed_folder)
         for p in ['images_background', 'images_evaluation']:
             for f in os.listdir(os.path.join(orig_root, p)):
