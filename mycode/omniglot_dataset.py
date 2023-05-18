@@ -28,6 +28,13 @@ class OmniglotDataset(torch.utils.data.Dataset):
 
         if download:
             self.download()
+        
+        if not self._check_exists():
+            raise RuntimeError(
+                'Dataset not found. You can use download=True to download it')
+        self.classes = get_current_classes(os.path.join(
+            self.root, self.splits_folder, mode + '.txt'
+        ))
     
     def _check_exists(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder))
@@ -81,3 +88,8 @@ class OmniglotDataset(torch.utils.data.Dataset):
                 shutil.move(os.path.join(orig_root,p,f),file_processed)
             os.rmdir(os.path.join(orig_root, p))
         print("Donwload finished.")
+
+def get_current_classes(fname):
+    with open(fname) as f:
+        classes = f.read().replace('/', os.sep).splitlines()
+    return classes
