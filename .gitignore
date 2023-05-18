@@ -1,6 +1,7 @@
 # Custom
 dataset/
 output/
+**/TMP
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
