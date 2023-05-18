@@ -35,7 +35,7 @@ class OmniglotDataset(torch.utils.data.Dataset):
         self.classes = get_current_classes(os.path.join(
             self.root, self.splits_folder, mode + '.txt'
         ))
-        self.add_items=find_items(os.path.join(self.root,self.processed_folder),
+        self.all_items=find_items(os.path.join(self.root,self.processed_folder),
             self.classes)
 
         self.idx_classes = index_classes(self.all_items)
