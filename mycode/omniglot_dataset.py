@@ -116,3 +116,11 @@ def find_items(root_dir, classes):
     
     print("== Dataset: Found %d items " % len(retour))
     return retour
+
+def index_classes(items):
+    idx={}
+    for i in items:
+        if (not i[1] + i[-1] in idx):
+            idx[i[1]+i[-1]] = len(idx)
+    print("== Dataset: Found %d classes" % len(idx))
+    return idx
