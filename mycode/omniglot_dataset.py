@@ -35,7 +35,16 @@ class OmniglotDataset(torch.utils.data.Dataset):
         self.classes = get_current_classes(os.path.join(
             self.root, self.splits_folder, mode + '.txt'
         ))
-    
+        self.add_items=find_items(os.path.join(self.root,self.processed_folder),
+            self.classes)
+
+        self.idx_classes = index_classes(self.all_items)
+
+        paths, self.y = zip(*[self.get_path_label(pl) for pl in range(len(self))])
+
+        self.x = map(load_img, paths, range(len(paths)))
+        self.x = list(self.x)
+
     def _check_exists(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder))
 
@@ -93,3 +102,18 @@ def get_current_classes(fname):
     with open(fname) as f:
         classes = f.read().replace('/', os.sep).splitlines()
     return classes
+
+def find_items(root_dir, classes):
+    retour=[]
+    rots = [os.sep+'rot000',os.sep+'rot090',os.sep+'rot180',os.sep+'rot270']
+    for (root,dirs,files) in os.walk(root_dir):
+        for f in files:
+            r=root.split(os.sep)
+            lr=len(r)
+            label=r[lr-2]+os.sep+r[r-1]
+            for rot in rots:
+                if label+rot in classes and (f.endswith('png')):
+                    retour.extend([(f,label,root,rot)])
+    
+    print("== Dataset: Found %d items " % len(retour))
+    return retour
