@@ -109,8 +109,7 @@ def find_items(root_dir, classes):
     for (root,dirs,files) in os.walk(root_dir):
         for f in files:
             r=root.split(os.sep)
-            lr=len(r)
-            label=r[lr-2]+os.sep+r[r-1]
+            label=r[-2]+os.sep+r[-1]
             for rot in rots:
                 if label+rot in classes and (f.endswith('png')):
                     retour.extend([(f,label,root,rot)])
