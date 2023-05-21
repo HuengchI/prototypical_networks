@@ -3,8 +3,18 @@ import sys
 import torch
 from parser_util import get_parser
 from omniglot_dataset import OmniglotDataset
+from prototypical_batch_sampler import PrototypicalBatchSampler
 import numpy as np
 
+
+def init_seed(opt):
+    '''
+    Disable cudnn to maximize reproducibility, because cudnn contains some randomized algorithms
+    '''
+    torch.cuda.cudnn_enabled = False
+    np.random.seed(opt.manual_seed)
+    torch.manual_seed(opt.manual_seed)
+    torch.cuda.manual_seed(opt.manual_seed)
 
 def init_dataset(opt, mode):
     dataset = OmniglotDataset(mode=mode, root=opt.dataset_root)
@@ -33,6 +43,20 @@ def init_dataloader(opt, mode):
     sampler = init_sampler(opt, dataset.y, mode)
     dataloader = torch.utils.data.DataLoader(dataset, batch_sampler=sampler)
     return dataloader
+
+def init_protonet(opt):
+    device = 'cuda:0' if torch.cuda.is_available() and opt.cuda else 'cpu'
+    model = ProtoNet().to(device)
+    return model
+
+def init_optim(opt, model):
+    return torch.optim.Adam(params=model.parameters(),
+                            lr=opt.learning_rate)
+
+def init_lr_scheduler(opt, optim):
+    return torch.optim.lr_scheduler.StepLR(optimizer=optim,
+                                           gamma=opt.lr_scheduler_gamma,
+                                           step_size=opt.lr_scheduler_step)
 
 def main():
     options = get_parser().parse_args()
