@@ -29,9 +29,11 @@ class PrototypicalBatchSampler(object):
         # fill it with nans
         # for every class c, fill the relative row with the indices samples belonging to c
         # in numel_per_class we store the number of samples for each class/row
-        
+
         # for omniglot dataset, there're 4122 classes and each class contains 20 samples
         # so the matrix size is 4122 X 20
+
+        # creating such a matrix makes it easy to randomly sample batches with Pytorch API such as 'randperm'
         self.idxs=range(len(self.labels))
         self.indexes=np.empty((len(self.classes), max(self.counts)), dtype=int) * np.nan
         self.indexes = torch.tensor(self.indexes)
@@ -40,6 +42,7 @@ class PrototypicalBatchSampler(object):
             label_idx = np.argwhere(self.classes == label).item()
             self.indexes[label_idx, np.where(np.isnan(self.indexes[label_idx]))[0][0]] = idx
             self.numel_per_class[label_idx] += 1
+        self.indexes.to(dtype=torch.int)
 
     def __iter__(self):
         '''
