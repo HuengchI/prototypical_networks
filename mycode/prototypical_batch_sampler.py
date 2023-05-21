@@ -50,7 +50,7 @@ class PrototypicalBatchSampler(object):
 
         for it in range(self.iterations):
             batch_size = spc*cpi
-            batch=torch.tensor(batch_size,dtype=torch.int64)
+            batch=torch.empty(batch_size,dtype=torch.int64)
             c_idxs = torch.randperm(len(self.classes))[:cpi]
             for i, c in enumerate(self.classes[c_idxs]): # iterating over the permutated classes list
                 s=slice(i*spc,(i+1)*spc) # the covered length of s is ONE 'sample_per_class'
