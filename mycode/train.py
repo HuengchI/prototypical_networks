@@ -24,7 +24,7 @@ def init_dataset(opt, mode):
                         to satisfy the chosen classes_per_it. Decrease the \
                         classes_per_it_{tr/val} option and try again.'))
 
-def init_sampler(opt, labels, mode):
+def init_sampler(opt, labels, mode): # labels = self.y
     if 'train' in mode:
         classes_per_it = opt.classes_per_it_tr
         num_samples = opt.num_support_tr + opt.num_query_tr
