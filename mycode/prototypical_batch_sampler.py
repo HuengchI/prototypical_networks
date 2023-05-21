@@ -29,10 +29,13 @@ class PrototypicalBatchSampler(object):
         # fill it with nans
         # for every class c, fill the relative row with the indices samples belonging to c
         # in numel_per_class we store the number of samples for each class/row
+        
+        # for omniglot dataset, there're 4122 classes and each class contains 20 samples
+        # so the matrix size is 4122 X 20
         self.idxs=range(len(self.labels))
         self.indexes=np.empty((len(self.classes), max(self.counts)), dtype=int) * np.nan
         self.indexes = torch.tensor(self.indexes)
-        self.numel_per_class = torch.zeros_like(self.classses)
+        self.numel_per_class = torch.zeros_like(self.classes)
         for idx, label in enumerate(self.labels):
             label_idx = np.argwhere(self.classes == label).item()
             self.indexes[label_idx, np.where(np.isnan(self.indexes[label_idx]))[0][0]] = idx
@@ -40,7 +43,7 @@ class PrototypicalBatchSampler(object):
 
     def __iter__(self):
         '''
-        yeild a batch of indexes
+        yeild a batch(episode) of indexes
         '''
         spc = self.sample_per_class
         cpi=self.classes_per_it
@@ -49,11 +52,17 @@ class PrototypicalBatchSampler(object):
             batch_size = spc*cpi
             batch=torch.tensor(batch_size,dtype=torch.int64)
             c_idxs = torch.randperm(len(self.classes))[:cpi]
-            for i, c in enumerate(self.classes[c_idxs]):
-                s=slice(i*spc,(i+1)*spc)
+            for i, c in enumerate(self.classes[c_idxs]): # iterating over the permutated classes list
+                s=slice(i*spc,(i+1)*spc) # the covered length of s is ONE 'sample_per_class'
 
-                label_idx=torch.arange(len(self.classes)).long()[self.classes==c].item()
-                sample_idxs=torch.randperm(self.numel_per_class[label_idx])[:spc]
-                batch[s]=self.indexes[label_idx][sample_idxs]
-            batch=batch[torch.randperm(len(batch))]
+                label_idx=torch.arange(len(self.classes)).long()[self.classes==c].item() # find the class c's original id(w/o permutation)
+                sample_idxs=torch.randperm(self.numel_per_class[label_idx])[:spc] # randomly choose 'spc' samples of class c
+                batch[s]=self.indexes[label_idx][sample_idxs] # put the chosen 'spc' samples of class c to the (i*spc,(i+1)spc) postion of list 'batch'
+            batch=batch[torch.randperm(len(batch))] # let samples from each class intersect with each other
             yield batch
+    
+    def __len__(self):
+        '''
+        returns the number of episodes per epoch
+        '''
+        return self.iterations
