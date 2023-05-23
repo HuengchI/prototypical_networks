@@ -40,33 +40,48 @@ def euclidean_dist(x,y):
 def prototypical_loss(input, target, n_support):
     # input=model_output
     # target=y
-    target_cpu=target.to('cpu')
-    input_cpu=input.to('cpu')
-
-    def supp_idxs(c):
-        return target_cpu.eq(c).nonzero()[:n_support].squeeze(dim=1)
     
-    classes = torch.unique(target_cpu)
+    # target is made up of 'n_classes x (n_support+n_query)' labels
+    classes = torch.unique(target)
     n_classes=len(classes)
 
-    # assuming n_query, n_target constants
-    n_query=target_cpu.eq(classes[0].item()).sum().item() - n_support
+    # 'task_idxs' is a matrix of shape 'n_classes x (n_support+n_query)'
+    # row i of 'task_idxs' correspond to all the coordinates of samples of class i
+    task_idxs = torch.stack(list(map(lambda c: torch.argwhere(target == c).squeeze(),classes)), dim=0)
+    n_query = task_idxs.shape[1] - n_support
 
-    support_idxs=list(map(supp_idxs, classes))
+    # support_idxs[i] are all the coordinates of all support labels(of class[i]) in 'target' tensor
+    # so as query_idxs[i]
+    support_idxs, query_idxs = task_idxs.split([n_support, n_query], dim=1)
+    support_samples = input[support_idxs]
+    query_samples = input[query_idxs]
 
-    prototypes = torch.stack([input_cpu[idx_list].mean(0) for idx_list in support_idxs])
-    query_idxs = torch.stack(list(map(lambda c: target_cpu.eq(c).nonzero()[n_support:], classes))).view(-1)
+    # prototypes[i] are the average vector across all support samples' latent features(of class[i])
+    prototypes = support_samples.mean(dim=1)
+    
+    # dists[i][j][k] means the euclidean distance between
+    # the jth query sample of class[i] and the prototype of class[k]
+    dists=euclidean_dist(query_samples.view(n_classes*n_query,-1), prototypes).view(n_classes, n_query, n_classes)
 
-    query_samples = input.to('cpu')[query_idxs]
-    dists=euclidean_dist(query_samples, prototypes)
+    # code below euqals to the following pseudocode:
+    # for c in all_classes:
+    #   for q in query_set_of_class_c:
+    #       computes softmax of q over all_prototypes
+    log_p_y=F.log_softmax(-dists,dim=2)
 
-    log_p_y=F.log_softmax(-dists,dim=1).view(n_classes,n_query, -1)
-
-    target_inds = torch.arange(0, n_classes)
+    # according to the paper, loss can be computed as:
+    # for c in all_classes:
+    #   for q in query_set_of_class_c:
+    #       loss += softmax probability of dist(q, prototype_of_class_c)
+    #       which equals to log_p_y[c][q][c]
+    # loss /= (n_classes+n_query)
+    target_inds = torch.arange(0, n_classes).to(target.device)
     target_inds = target_inds.view(n_classes, 1, 1)
     target_inds = target_inds.expand(n_classes, n_query, 1).long()
 
-    loss_val = -log_p_y.gather(2, target_inds).squeeze().view(-1).mean()
+    loss_val = -log_p_y.gather(dim=2, index=target_inds).squeeze().view(-1).mean()
+    
+    # y_hat has the same shape of query_samples
     _, y_hat=log_p_y.max(2)
     acc_val=y_hat.eq(target_inds.squeeze(2)).float().mean()
 

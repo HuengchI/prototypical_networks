@@ -182,7 +182,11 @@ def main():
          test_dataloader=test_dataloader,
          model=model)
     
-
+    model.load_state_dict(best_state)
+    print('Testing with best model..')
+    test(opt=options,
+         test_dataloader=test_dataloader,
+         model=model)
 
 if __name__=='__main__':
     main()
