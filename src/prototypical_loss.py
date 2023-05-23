@@ -2,14 +2,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 
-class PrototypicalLoss(nn.Module):
-    def __init__(self, n_support):
-        super(PrototypicalLoss, self).__init__()
-        self.n_support=n_support
-
-    def forward(self, input, target):
-        return prototypical_loss(input, target, self.n_support)
-
 def euclidean_dist(x,y):
     '''
     Compute euclidean distance square between two tensors
