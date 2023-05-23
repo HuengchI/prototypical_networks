@@ -55,7 +55,7 @@ def prototypical_loss(input, target, n_support):
     support_idxs=list(map(supp_idxs, classes))
 
     prototypes = torch.stack([input_cpu[idx_list].mean(0) for idx_list in support_idxs])
-    query_idxs = torch.stack(list(map(lambda c: target_cpu.eq(c).nonzero()[n_support:], classes)))
+    query_idxs = torch.stack(list(map(lambda c: target_cpu.eq(c).nonzero()[n_support:], classes))).view(-1)
 
     query_samples = input.to('cpu')[query_idxs]
     dists=euclidean_dist(query_samples, prototypes)

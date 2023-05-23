@@ -4,6 +4,7 @@ import torch
 from parser_util import get_parser
 from omniglot_dataset import OmniglotDataset
 from prototypical_batch_sampler import PrototypicalBatchSampler
+from prototypical_loss import prototypical_loss as loss_fn
 from protonet import ProtoNet
 import numpy as np
 from tqdm import tqdm
@@ -25,6 +26,7 @@ def init_dataset(opt, mode):
         raise(Exception('There are not enough classes in the dataset in order \
                         to satisfy the chosen classes_per_it. Decrease the \
                         classes_per_it_{tr/val} option and try again.'))
+    return dataset
 
 def init_sampler(opt, labels, mode): # labels = self.y
     if 'train' in mode:
