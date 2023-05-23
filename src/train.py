@@ -5,6 +5,7 @@ from parser_util import get_parser
 from omniglot_dataset import OmniglotDataset
 from prototypical_batch_sampler import PrototypicalBatchSampler
 from protonet import ProtoNet
+from prototypical_loss import prototypical_loss as loss_fn
 import numpy as np
 from tqdm import tqdm
 
